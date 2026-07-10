@@ -380,42 +380,63 @@ export default function GlobeView() {
     : [];
 
   return (
-    <div ref={containerRef} className="h-full w-full">
-      {/* Guard against mounting a 0x0 canvas before the ResizeObserver
-          has reported the container's real size at least once. */}
-      {size.width > 0 && size.height > 0 && (
-        <Globe
-          ref={globeRef}
-          width={size.width}
-          height={size.height}
-          backgroundColor="rgba(0,0,0,0)"
-          globeMaterial={globeMaterial}
-          showAtmosphere
-          atmosphereColor="#cfe8ff"
-          atmosphereAltitude={0.13}
-          polygonsData={countries}
-          polygonCapColor={getCapColor}
-          // A subtle dark wall under each cap, for a slight extruded/map-like edge.
-          polygonSideColor={() => "rgba(0, 0, 0, 0.15)"}
-          // A muted, low-contrast stroke — deliberately subtle rather than
-          // a bold cartoon outline. The line itself is already thin by
-          // construction: three-globe draws polygon borders with plain
-          // WebGL line segments, which render at a fixed ~1px regardless
-          // of any width setting on virtually every browser/GPU.
-          polygonStrokeColor={() => "rgba(240, 245, 248, 0.65)"}
-          polygonAltitude={(polygon) => (polygon === hoveredCountry ? 0.02 : 0.01)}
-          polygonLabel={(polygon) => (polygon as PreparedCountry).properties.ADMIN}
-          polygonsTransitionDuration={200}
-          onPolygonHover={(polygon) => setHoveredCountry(polygon as PreparedCountry | null)}
-          onPolygonClick={handlePolygonClick}
-          pointsData={markerData}
-          pointLat="lat"
-          pointLng="lng"
-          pointColor={() => MARKER_COLOR}
-          pointAltitude={0.02}
-          pointRadius={0.4}
-        />
-      )}
+    // Premium "sapphire" backdrop, rather than the flat black a
+    // transparent globe canvas would otherwise reveal — a plain WebGL
+    // clear color reads as "space simulator," not "travel app." Unlike an
+    // arbitrary purple/indigo dusk, these three stops are pulled straight
+    // from the globe's own ocean palette (near-black navy -> OCEAN_COLD ->
+    // a deepened OCEAN_WARM), so the backdrop reads as the ocean's color
+    // continuing into the surrounding atmosphere rather than an unrelated
+    // hue. The gradient lives here (not in whichever tab embeds this
+    // component) so GlobeView looks right on its own regardless of what
+    // wraps it. `relative` gives the glow overlay below a positioning
+    // context to anchor to.
+    <div className="relative h-full w-full overflow-hidden bg-gradient-to-b from-[#030c16] via-[#0a2647] to-[#0f3d4a]">
+      {/* Soft horizon glow: a separate radial layer (not a third gradient
+          stop above) since a radial shape and a linear sweep don't combine
+          into one background-image value cleanly. Kept subtle (15% opacity)
+          and colored to match MARKER_COLOR/orange-500 so the backdrop's
+          warmth ties back into the destination marker's accent rather than
+          introducing an unrelated hue. `pointer-events-none` so it never
+          intercepts drags/clicks meant for the globe underneath. */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_rgba(249,115,22,0.15),_transparent_65%)]" />
+      <div ref={containerRef} className="relative h-full w-full">
+        {/* Guard against mounting a 0x0 canvas before the ResizeObserver
+            has reported the container's real size at least once. */}
+        {size.width > 0 && size.height > 0 && (
+          <Globe
+            ref={globeRef}
+            width={size.width}
+            height={size.height}
+            backgroundColor="rgba(0,0,0,0)"
+            globeMaterial={globeMaterial}
+            showAtmosphere
+            atmosphereColor="#cfe8ff"
+            atmosphereAltitude={0.13}
+            polygonsData={countries}
+            polygonCapColor={getCapColor}
+            // A subtle dark wall under each cap, for a slight extruded/map-like edge.
+            polygonSideColor={() => "rgba(0, 0, 0, 0.15)"}
+            // A muted, low-contrast stroke — deliberately subtle rather than
+            // a bold cartoon outline. The line itself is already thin by
+            // construction: three-globe draws polygon borders with plain
+            // WebGL line segments, which render at a fixed ~1px regardless
+            // of any width setting on virtually every browser/GPU.
+            polygonStrokeColor={() => "rgba(240, 245, 248, 0.65)"}
+            polygonAltitude={(polygon) => (polygon === hoveredCountry ? 0.02 : 0.01)}
+            polygonLabel={(polygon) => (polygon as PreparedCountry).properties.ADMIN}
+            polygonsTransitionDuration={200}
+            onPolygonHover={(polygon) => setHoveredCountry(polygon as PreparedCountry | null)}
+            onPolygonClick={handlePolygonClick}
+            pointsData={markerData}
+            pointLat="lat"
+            pointLng="lng"
+            pointColor={() => MARKER_COLOR}
+            pointAltitude={0.02}
+            pointRadius={0.4}
+          />
+        )}
+      </div>
     </div>
   );
 }
